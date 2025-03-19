@@ -1,10 +1,10 @@
-use feetech_servo_sdk::packet_handler::PacketHandler;
+use feetech_servo_sdk::{commands::Command, commands::Motor, packet_handler::PacketHandler};
 
 fn main() {
-    let mut packet_handler = PacketHandler::new("/dev/ttyACM0", 1_000_000);
-    let _result = packet_handler.move_motor(1, 1400);
-    // let result = dbg!(packet_handler.ping(1));
-    // if let Ok(feetech_servo_sdk::packet_handler::RxStatus::Success(Some(status_packet))) = result {
-    //     println!("{}", status_packet);
-    // }
+    let baud_rate = 1_000_000;
+    let mut packet_handler = PacketHandler::new("/dev/ttyACM1", baud_rate);
+    let mut motor = Motor::new(&mut packet_handler, 1);
+    motor.act(Command::Ping);
+    motor.act(Command::ReadId);
+    motor.act(Command::WriteTorqueSwitch(false));
 }
