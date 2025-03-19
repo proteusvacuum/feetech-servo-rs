@@ -15,7 +15,7 @@ fn compute_checksum(id: u8, length: u8, instruction: u8, parameters: &[u8]) -> u
     (!checksum & 0xff) as u8
 }
 
-enum Instruction {
+pub enum Instruction {
     Ping,
     Read,
     Write,
@@ -40,7 +40,7 @@ impl From<Instruction> for u8 {
 }
 
 #[derive(Debug)]
-struct InstructionPacket {
+pub struct InstructionPacket {
     // https://emanual.robotis.com/docs/en/dxl/protocol1/#instruction-packet
     // header0: u8,
     // header1: u8,
@@ -52,7 +52,8 @@ struct InstructionPacket {
 }
 
 impl InstructionPacket {
-    fn new(id: u8, length: u8, instruction: u8, parameters: &[u8]) -> Self {
+    pub fn new(id: u8, instruction: u8, parameters: &[u8]) -> Self {
+        let length = (parameters.len() + 2) as u8;
         Self {
             id,
             length,
@@ -178,10 +179,10 @@ impl PacketHandler {
 
     pub fn ping(&mut self, motor_id: u8) -> RxResult {
         // TODO: Length is hardcoded here
-        let tx_packet = InstructionPacket::new(motor_id, 2, Instruction::Ping.into(), &[]);
+        let tx_packet = InstructionPacket::new(motor_id, Instruction::Ping.into(), &[]);
         self.tx_rx_packet(tx_packet)?;
 
-        let read_packet = InstructionPacket::new(motor_id, 4, Instruction::Read.into(), &[0x38, 2]);
+        let read_packet = InstructionPacket::new(motor_id, Instruction::Read.into(), &[0x38, 2]);
         self.tx_rx_packet(read_packet)
     }
 
@@ -190,13 +191,13 @@ impl PacketHandler {
         let high: u8 = (target_position & 0x00FF) as u8;
 
         let write_packet =
-            InstructionPacket::new(motor_id, 5, Instruction::Write.into(), &[0x2A, high, low]);
+            InstructionPacket::new(motor_id, Instruction::Write.into(), &[0x2A, high, low]);
         dbg!(&write_packet);
         dbg!(write_packet.as_bytes());
         self.tx_rx_packet(write_packet)
     }
 
-    fn tx_rx_packet(&mut self, packet: InstructionPacket) -> RxResult {
+    pub fn tx_rx_packet(&mut self, packet: InstructionPacket) -> RxResult {
         let result = dbg!(self.tx_packet(&packet));
         match result {
             Ok(_) => {
@@ -210,7 +211,7 @@ impl PacketHandler {
         }
     }
 
-    fn tx_packet(&mut self, packet: &InstructionPacket) -> TxResult {
+    pub fn tx_packet(&mut self, packet: &InstructionPacket) -> TxResult {
         if packet.get_total_packet_length() > 250 {
             return Err(TxError::TxError);
         }
