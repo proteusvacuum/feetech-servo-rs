@@ -57,7 +57,7 @@ impl InstructionPacket {
             id,
             length,
             instruction,
-            checksum: compute_checksum(id, length, instruction, &parameters),
+            checksum: compute_checksum(id, length, instruction, parameters),
             parameters: parameters.to_vec(),
         }
     }
@@ -204,7 +204,7 @@ impl PacketHandler {
                     // WARNING : Status Packet will not be returned if Broadcast ID(0xFE) is used.
                     return Ok(RxStatus::Success(None));
                 }
-                return self.rx_packet();
+                self.rx_packet()
             }
             Err(_) => todo!(),
         }
