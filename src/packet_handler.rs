@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use std::fmt::Display;
+
 use crate::serial::Serial;
 
 fn compute_checksum(id: u8, length: u8, instruction: u8, parameters: &[u8]) -> u8 {
@@ -56,6 +58,7 @@ impl From<Instruction> for u8 {
     }
 }
 
+#[derive(Debug)]
 struct InstructionPacket {
     // https://emanual.robotis.com/docs/en/dxl/protocol1/#instruction-packet
     // header0: u8,
@@ -68,8 +71,7 @@ struct InstructionPacket {
 }
 
 impl InstructionPacket {
-    fn new(id: u8, length: u8, instruction: u8) -> Self {
-        let parameters: Vec<u8> = vec![]; // TODO: add parameters
+    fn new(id: u8, length: u8, instruction: u8, parameters: &[u8]) -> Self {
         Self {
             // header0: 0xff,
             // header1: 0xff,
@@ -77,7 +79,7 @@ impl InstructionPacket {
             length,
             instruction,
             checksum: compute_checksum(id, length, instruction, &parameters),
-            parameters,
+            parameters: parameters.to_vec(),
         }
     }
 
@@ -100,6 +102,7 @@ impl InstructionPacket {
     }
 }
 
+#[derive(Debug)]
 pub struct StatusPacket {
     // https://emanual.robotis.com/docs/en/dxl/protocol1/#status-packetreturn-packet
     id: u8,
@@ -113,7 +116,7 @@ impl StatusPacket {
     fn new(header: &[u8], id: u8, length: u8, error: u8, params: &[u8], checksum: u8) -> Self {
         assert!(header == [0xFF, 0xFF]);
         let computed_checksum = compute_checksum(id, length, error, params);
-        assert!(checksum == computed_checksum); // TODO: handle this
+        // assert!(checksum == computed_checksum); // TODO: handle this
 
         Self {
             id,
@@ -122,6 +125,22 @@ impl StatusPacket {
             params: params.to_vec(),
             checksum,
         }
+    }
+}
+
+impl Display for StatusPacket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "id: {}, length: {}, error: {}, checksum: {}",
+            self.id, self.length, self.error, self.checksum
+        )?;
+        if self.params.len() == 2 {
+            //TODO: take into account Big Endian if the protocol demands it
+            let word = u16::from_le_bytes([self.params[0], self.params[1]]);
+            write!(f, ", data: {}", word)?;
+        }
+        Ok(())
     }
 }
 
@@ -140,6 +159,7 @@ pub enum TxResult {
     NotAvailable,
 }
 
+#[derive(Debug)]
 pub enum RxResult {
     Success(Option<StatusPacket>),
     PortBusy,
@@ -163,14 +183,20 @@ impl PacketHandler {
             port: Serial::new(port_name, baud_rate).expect("error connecting to serial port"),
         }
     }
+
     pub fn ping(&mut self, motor_id: u8) -> RxResult {
         // TODO: Length is hardcoded here
-        let tx_packet = InstructionPacket::new(motor_id, 2, Instruction::Ping.into());
-        self.tx_rx_packet(tx_packet)
+        let tx_packet = InstructionPacket::new(motor_id, 2, Instruction::Ping.into(), &[]);
+        self.tx_rx_packet(tx_packet);
+        // txpacket=[255, 255, 1, 4, 2, 3, 2, 243]
+        // id=1
+
+        let read_packet = InstructionPacket::new(motor_id, 4, Instruction::Read.into(), &[3, 2]);
+        self.tx_rx_packet(read_packet)
     }
 
     fn tx_rx_packet(&mut self, packet: InstructionPacket) -> RxResult {
-        let result = self.tx_packet(&packet);
+        let result = dbg!(self.tx_packet(&packet));
         if result != TxResult::Success {
             // Eh?
             return RxResult::RxFail;
@@ -186,7 +212,7 @@ impl PacketHandler {
         if packet.get_total_packet_length() > 250 {
             return TxResult::TxError;
         }
-        match self.port.write(&packet.as_bytes()) {
+        match self.port.write(&dbg!(packet.as_bytes())) {
             Ok(_) => TxResult::Success,
             Err(_) => TxResult::TxFail,
         }
@@ -198,12 +224,16 @@ impl PacketHandler {
             .read_exact(&mut header)
             .expect("reading header failed"); // TODO
         assert!(header == [0xFF, 0xFF]); // TODO
-        let mut packet: [u8; 3] = [0; 3];
+
+        let mut meta: [u8; 3] = [0; 3];
         self.port
-            .read_exact(&mut packet)
-            .expect("reading packet contents failed"); // TODO
-        let param_len = packet[1];
-        let mut params: Vec<u8> = Vec::with_capacity(param_len.into());
+            .read_exact(&mut meta)
+            .expect("reading metadata contents failed"); // TODO
+
+        let length = meta[1]; // Length = number of Parameters + 2
+        let num_params = (length - 2) as usize;
+        let mut params = vec![0u8; num_params];
+
         self.port
             .read_exact(&mut params)
             .expect("reading param contents failed"); // TODO
@@ -211,14 +241,8 @@ impl PacketHandler {
         self.port
             .read_exact(&mut checksum)
             .expect("reading checksum contents failed"); // TODO
-        let status_packet = StatusPacket::new(
-            &header,
-            packet[0],
-            packet[1],
-            packet[2],
-            &params,
-            checksum[0],
-        );
+        let status_packet =
+            StatusPacket::new(&header, meta[0], meta[1], meta[2], &params, checksum[0]);
         RxResult::Success(Some(status_packet))
     }
 }

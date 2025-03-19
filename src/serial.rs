@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serialport::SerialPort;
 
 #[derive(Debug)]
@@ -7,7 +9,9 @@ pub struct Serial {
 
 impl Serial {
     pub fn new(port_name: &str, baud_rate: u32) -> std::io::Result<Self> {
-        let port = serialport::new(port_name, baud_rate).open()?;
+        let port = serialport::new(port_name, baud_rate)
+            .timeout(Duration::from_millis(20))
+            .open()?;
         Ok(Self { port })
     }
 
