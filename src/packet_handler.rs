@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 
 use std::fmt::Display;
+use thiserror::Error;
 
 use crate::serial::Serial;
 
@@ -151,24 +152,45 @@ enum Endianness {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-pub enum TxResult {
+pub enum TxStatus {
     Success,
+}
+
+#[derive(Debug, Error)]
+pub enum TxError {
+    #[error("port is currently busy")]
     PortBusy,
+    #[error("tx failed")]
     TxFail,
+    #[error("tx encountered an error")]
     TxError,
+    #[error("not available")]
     NotAvailable,
 }
 
+type TxResult = Result<TxStatus, TxError>;
+
 #[derive(Debug)]
-pub enum RxResult {
+pub enum RxStatus {
     Success(Option<StatusPacket>),
-    PortBusy,
-    RxFail,
     RxWaiting,
+}
+
+#[derive(Debug, Error)]
+pub enum RxError {
+    #[error("port is currently busy")]
+    PortBusy,
+    #[error("rx failed")]
+    RxFail,
+    #[error("rx timeout")]
     RxTimeout,
+    #[error("rx corrupt")]
     RxCorrupt,
+    #[error("not available")]
     NotAvailable,
 }
+
+pub type RxResult = Result<RxStatus, RxError>;
 
 #[derive(Debug)]
 pub struct PacketHandler {
@@ -187,9 +209,7 @@ impl PacketHandler {
     pub fn ping(&mut self, motor_id: u8) -> RxResult {
         // TODO: Length is hardcoded here
         let tx_packet = InstructionPacket::new(motor_id, 2, Instruction::Ping.into(), &[]);
-        self.tx_rx_packet(tx_packet);
-        // txpacket=[255, 255, 1, 4, 2, 3, 2, 243]
-        // id=1
+        self.tx_rx_packet(tx_packet)?;
 
         let read_packet = InstructionPacket::new(motor_id, 4, Instruction::Read.into(), &[3, 2]);
         self.tx_rx_packet(read_packet)
@@ -197,24 +217,25 @@ impl PacketHandler {
 
     fn tx_rx_packet(&mut self, packet: InstructionPacket) -> RxResult {
         let result = dbg!(self.tx_packet(&packet));
-        if result != TxResult::Success {
-            // Eh?
-            return RxResult::RxFail;
+        match result {
+            Ok(status) => {
+                if packet.id == 0xFE {
+                    // WARNING : Status Packet will not be returned if Broadcast ID(0xFE) is used.
+                    return Ok(RxStatus::Success(None));
+                }
+                return self.rx_packet();
+            }
+            Err(_) => todo!(),
         }
-        if packet.id == 0xFE {
-            // WARNING : Status Packet will not be returned if Broadcast ID(0xFE) is used.
-            return RxResult::Success(None);
-        }
-        self.rx_packet()
     }
 
     fn tx_packet(&mut self, packet: &InstructionPacket) -> TxResult {
         if packet.get_total_packet_length() > 250 {
-            return TxResult::TxError;
+            return Err(TxError::TxError);
         }
         match self.port.write(&dbg!(packet.as_bytes())) {
-            Ok(_) => TxResult::Success,
-            Err(_) => TxResult::TxFail,
+            Ok(_) => Ok(TxStatus::Success),
+            Err(_) => Err(TxError::TxFail),
         }
     }
 
@@ -243,6 +264,6 @@ impl PacketHandler {
             .expect("reading checksum contents failed"); // TODO
         let status_packet =
             StatusPacket::new(&header, meta[0], meta[1], meta[2], &params, checksum[0]);
-        RxResult::Success(Some(status_packet))
+        Ok(RxStatus::Success(Some(status_packet)))
     }
 }
