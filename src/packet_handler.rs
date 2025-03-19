@@ -74,8 +74,6 @@ struct InstructionPacket {
 impl InstructionPacket {
     fn new(id: u8, length: u8, instruction: u8, parameters: &[u8]) -> Self {
         Self {
-            // header0: 0xff,
-            // header1: 0xff,
             id,
             length,
             instruction,
@@ -211,8 +209,19 @@ impl PacketHandler {
         let tx_packet = InstructionPacket::new(motor_id, 2, Instruction::Ping.into(), &[]);
         self.tx_rx_packet(tx_packet)?;
 
-        let read_packet = InstructionPacket::new(motor_id, 4, Instruction::Read.into(), &[3, 2]);
+        let read_packet = InstructionPacket::new(motor_id, 4, Instruction::Read.into(), &[0x38, 2]);
         self.tx_rx_packet(read_packet)
+    }
+
+    pub fn move_motor(&mut self, motor_id: u8, target_position: u16) {
+        let low: u8 = (target_position >> 8) as u8;
+        let high: u8 = (target_position & 0x00FF) as u8;
+
+        let write_packet =
+            InstructionPacket::new(motor_id, 5, Instruction::Write.into(), &[0x2A, high, low]);
+        dbg!(&write_packet);
+        dbg!(write_packet.as_bytes());
+        self.tx_rx_packet(write_packet);
     }
 
     fn tx_rx_packet(&mut self, packet: InstructionPacket) -> RxResult {
