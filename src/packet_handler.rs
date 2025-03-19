@@ -1,6 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 use std::fmt::Display;
 use thiserror::Error;
 
@@ -22,27 +19,10 @@ enum Instruction {
     Ping,
     Read,
     Write,
-    RegWrite,
-    Action,
-    SyncWrite,
-    SyncRead,
-}
-
-impl Instruction {
-    fn length(&self) -> u8 {
-        // TODO: Do we want to do this like this?
-        // It should be able to calculate it by itself by counting something,
-        // I'm just not sure what it is counting yet
-        match self {
-            Instruction::Ping => 2,
-            Instruction::Read => todo!(),
-            Instruction::Write => todo!(),
-            Instruction::RegWrite => todo!(),
-            Instruction::Action => todo!(),
-            Instruction::SyncWrite => todo!(),
-            Instruction::SyncRead => todo!(),
-        }
-    }
+    // RegWrite,
+    // Action,
+    // SyncWrite,
+    // SyncRead,
 }
 
 impl From<Instruction> for u8 {
@@ -51,10 +31,10 @@ impl From<Instruction> for u8 {
             Instruction::Ping => 1,
             Instruction::Read => 2,
             Instruction::Write => 3,
-            Instruction::RegWrite => 4,
-            Instruction::Action => 5,
-            Instruction::SyncWrite => 0x83,
-            Instruction::SyncRead => 0x82,
+            // Instruction::RegWrite => 4,
+            // Instruction::Action => 5,
+            // Instruction::SyncWrite => 0x83,
+            // Instruction::SyncRead => 0x82,
         }
     }
 }
@@ -115,7 +95,7 @@ impl StatusPacket {
     fn new(header: &[u8], id: u8, length: u8, error: u8, params: &[u8], checksum: u8) -> Self {
         assert!(header == [0xFF, 0xFF]);
         let computed_checksum = compute_checksum(id, length, error, params);
-        // assert!(checksum == computed_checksum); // TODO: handle this
+        assert!(checksum == computed_checksum); // TODO: handle this
 
         Self {
             id,
@@ -141,12 +121,6 @@ impl Display for StatusPacket {
         }
         Ok(())
     }
-}
-
-#[derive(PartialEq, Eq, Debug)]
-enum Endianness {
-    Little,
-    Big,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -192,14 +166,12 @@ pub type RxResult = Result<RxStatus, RxError>;
 
 #[derive(Debug)]
 pub struct PacketHandler {
-    endianness: Endianness,
     port: Serial,
 }
 
 impl PacketHandler {
     pub fn new(port_name: &str, baud_rate: u32) -> Self {
         Self {
-            endianness: Endianness::Little,
             port: Serial::new(port_name, baud_rate).expect("error connecting to serial port"),
         }
     }
@@ -213,7 +185,7 @@ impl PacketHandler {
         self.tx_rx_packet(read_packet)
     }
 
-    pub fn move_motor(&mut self, motor_id: u8, target_position: u16) {
+    pub fn move_motor(&mut self, motor_id: u8, target_position: u16) -> RxResult {
         let low: u8 = (target_position >> 8) as u8;
         let high: u8 = (target_position & 0x00FF) as u8;
 
@@ -221,13 +193,13 @@ impl PacketHandler {
             InstructionPacket::new(motor_id, 5, Instruction::Write.into(), &[0x2A, high, low]);
         dbg!(&write_packet);
         dbg!(write_packet.as_bytes());
-        self.tx_rx_packet(write_packet);
+        self.tx_rx_packet(write_packet)
     }
 
     fn tx_rx_packet(&mut self, packet: InstructionPacket) -> RxResult {
         let result = dbg!(self.tx_packet(&packet));
         match result {
-            Ok(status) => {
+            Ok(_) => {
                 if packet.id == 0xFE {
                     // WARNING : Status Packet will not be returned if Broadcast ID(0xFE) is used.
                     return Ok(RxStatus::Success(None));
