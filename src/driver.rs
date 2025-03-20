@@ -1,12 +1,15 @@
 use crate::{commands::Command, packet_handler::PacketHandler};
 
-pub struct Driver<'a> {
-    packet_handler: &'a mut PacketHandler,
+pub struct Driver {
+    packet_handler: PacketHandler,
 }
 
-impl<'a> Driver<'a> {
-    pub fn new(packet_handler: &'a mut PacketHandler) -> Self {
-        Self { packet_handler }
+impl Driver {
+    pub fn new(port_name: &str) -> Self {
+        let baud_rate = 1_000_000;
+        Self {
+            packet_handler: PacketHandler::new(port_name, baud_rate),
+        }
     }
 
     pub fn act(&mut self, motor_id: u8, command: Command) -> Option<u16> {

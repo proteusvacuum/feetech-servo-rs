@@ -1,13 +1,9 @@
 use std::{thread::sleep, time::Duration};
 
-use feetech_servo_sdk::{commands::Command, driver::Driver, packet_handler::PacketHandler};
+use feetech_servo_sdk::{commands::Command, driver::Driver};
 
 fn main() {
-    let baud_rate = 1_000_000;
-
-    let mut packet_handler = PacketHandler::new("/dev/ttyACM0", baud_rate);
-    let mut driver = Driver::new(&mut packet_handler);
-
+    let mut driver = Driver::new("/dev/ttyACM0");
     let current_position = driver.act(1, Command::ReadCurrentPosition).unwrap();
     println!("Current position: {}", current_position);
     let target_position = current_position - 200;
