@@ -52,8 +52,9 @@ pub struct InstructionPacket {
 }
 
 impl InstructionPacket {
-    pub fn new(id: u8, instruction: u8, parameters: &[u8]) -> Self {
-        let length = (parameters.len() + 2) as u8;
+    pub fn new(id: u8, instruction: Instruction, parameters: &[u8]) -> Self {
+        let length: u8 = (parameters.len() + 2) as u8;
+        let instruction: u8 = instruction.into();
         Self {
             id,
             length,
@@ -106,20 +107,27 @@ impl StatusPacket {
             checksum,
         }
     }
+
+    pub fn extract_data(&self) -> u16 {
+        match self.params.len() {
+            1 => self.params[0] as u16,
+            2 => u16::from_le_bytes([self.params[0], self.params[1]]),
+            _ => 0u16,
+        }
+    }
 }
 
 impl Display for StatusPacket {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "id: {}, length: {}, error: {}, checksum: {}",
-            self.id, self.length, self.error, self.checksum
+            "id: {}, length: {}, error: {}, checksum: {}, data: {}",
+            self.id,
+            self.length,
+            self.error,
+            self.checksum,
+            self.extract_data()
         )?;
-        if self.params.len() == 2 {
-            //TODO: take into account Big Endian if the protocol demands it
-            let word = u16::from_le_bytes([self.params[0], self.params[1]]);
-            write!(f, ", data: {}", word)?;
-        }
         Ok(())
     }
 }
@@ -177,28 +185,8 @@ impl PacketHandler {
         }
     }
 
-    pub fn ping(&mut self, motor_id: u8) -> RxResult {
-        // TODO: Length is hardcoded here
-        let tx_packet = InstructionPacket::new(motor_id, Instruction::Ping.into(), &[]);
-        self.tx_rx_packet(tx_packet)?;
-
-        let read_packet = InstructionPacket::new(motor_id, Instruction::Read.into(), &[0x38, 2]);
-        self.tx_rx_packet(read_packet)
-    }
-
-    pub fn move_motor(&mut self, motor_id: u8, target_position: u16) -> RxResult {
-        let low: u8 = (target_position >> 8) as u8;
-        let high: u8 = (target_position & 0x00FF) as u8;
-
-        let write_packet =
-            InstructionPacket::new(motor_id, Instruction::Write.into(), &[0x2A, high, low]);
-        dbg!(&write_packet);
-        dbg!(write_packet.as_bytes());
-        self.tx_rx_packet(write_packet)
-    }
-
     pub fn tx_rx_packet(&mut self, packet: InstructionPacket) -> RxResult {
-        let result = dbg!(self.tx_packet(&packet));
+        let result = self.tx_packet(&packet);
         match result {
             Ok(_) => {
                 if packet.id == 0xFE {
@@ -215,7 +203,7 @@ impl PacketHandler {
         if packet.get_total_packet_length() > 250 {
             return Err(TxError::TxError);
         }
-        match self.port.write(&dbg!(packet.as_bytes())) {
+        match self.port.write(&packet.as_bytes()) {
             Ok(_) => Ok(TxStatus::Success),
             Err(_) => Err(TxError::TxFail),
         }
