@@ -1,37 +1,30 @@
-use crate::packet_handler::{Instruction, InstructionPacket, PacketHandler};
+use crate::packet_handler::{Instruction, InstructionPacket};
 
 pub enum Command {
     Ping,
     ReadId,
     WriteTorqueSwitch(bool),
+    ReadCurrentPosition,
+
+    WriteTargetPosition(u16),
 }
 
 impl Command {
-    fn to_instruction_packet(&self, motor_id: u8) -> InstructionPacket {
+    pub fn to_instruction_packet(&self, motor_id: u8) -> InstructionPacket {
         match self {
-            Command::Ping => InstructionPacket::new(motor_id, Instruction::Ping.into(), &[]),
-            Command::ReadId => {
-                InstructionPacket::new(motor_id, Instruction::Read.into(), &[0x5, 1])
-            }
+            Command::Ping => InstructionPacket::new(motor_id, Instruction::Ping, &[]),
+            Command::ReadId => InstructionPacket::new(motor_id, Instruction::Read, &[0x5, 1]),
             Command::WriteTorqueSwitch(value) => {
-                InstructionPacket::new(motor_id, Instruction::Write.into(), &[0x28, *value as u8])
+                InstructionPacket::new(motor_id, Instruction::Write, &[0x28, *value as u8])
+            }
+            Command::ReadCurrentPosition => {
+                InstructionPacket::new(motor_id, Instruction::Read, &[0x38, 2])
+            }
+            Command::WriteTargetPosition(target_position) => {
+                let low: u8 = (*target_position >> 8) as u8;
+                let high: u8 = (*target_position & 0x00FF) as u8;
+                InstructionPacket::new(motor_id, Instruction::Write, &[0x2A, high, low])
             }
         }
-    }
-}
-
-pub struct Motor<'a> {
-    handler: &'a mut PacketHandler,
-    id: u8,
-}
-
-impl<'a> Motor<'a> {
-    pub fn new(handler: &'a mut PacketHandler, id: u8) -> Self {
-        Self { handler, id }
-    }
-
-    pub fn act(&mut self, command: Command) {
-        let packet = command.to_instruction_packet(self.id);
-        dbg!(self.handler.tx_rx_packet(packet));
     }
 }

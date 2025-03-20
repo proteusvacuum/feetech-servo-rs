@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod driver;
 pub mod packet_handler;
 pub mod serial;
 
