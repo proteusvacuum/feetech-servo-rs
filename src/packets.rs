@@ -95,3 +95,32 @@ impl InstructionPacket {
         bytes
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn instruction_packet_bytes() {
+        let motor_id = 0x5;
+        let cases = vec![
+            (
+                InstructionPacket::new(motor_id, Instruction::Ping, &[]),
+                vec![0xff, 0xff, motor_id, 2, 1, 247],
+            ),
+            (
+                // Read Current Location: 0X38
+                InstructionPacket::new(motor_id, Instruction::Read, &[0x38]),
+                vec![0xff, 0xff, motor_id, 3, 2, 0x38, 189],
+            ),
+            (
+                // Write Target Location: 0x3A
+                InstructionPacket::new(motor_id, Instruction::Write, &[0x3A, 12, 12]),
+                vec![0xff, 0xff, motor_id, 5, 3, 0x3A, 12, 12, 160],
+            ),
+        ];
+        for (instruction_packet, expected) in cases {
+            assert_eq!(instruction_packet.as_bytes(), expected);
+        }
+    }
+}

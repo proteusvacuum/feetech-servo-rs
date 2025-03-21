@@ -29,3 +29,26 @@ impl Command {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_instruction_packet() {
+        let motor_id = 0x25;
+        let cases = vec![
+            (
+                Command::Ping,
+                InstructionPacket::new(motor_id, Instruction::Ping, &[]),
+            ),
+            (
+                Command::WriteTargetPosition(1025),
+                InstructionPacket::new(motor_id, Instruction::Write, &[0x2A, 0x1, 0x4]),
+            ),
+        ];
+        for (command, instruction_packet) in cases {
+            assert_eq!(command.to_instruction_packet(motor_id), instruction_packet);
+        }
+    }
+}
