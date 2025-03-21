@@ -21,7 +21,7 @@ fn step_to_angle(current_step: i32, zero_step: i32) -> i32 {
 }
 
 fn angle_to_step(angle: i32, zero_step: i32) -> u16 {
-    if angle < -180 || angle > 180 {
+    if !(-180..=180).contains(&angle) {
         panic!("Angle must be between -180 and 180 degrees");
     }
     let mut angle_norm = angle;
@@ -63,7 +63,7 @@ fn main() {
         let leader_angles: Vec<i32> = leader_positions
             .iter()
             .zip(&leader_zero)
-            .map(|(step, zero)| step_to_angle(*step as i32, *zero as i32))
+            .map(|(step, zero)| step_to_angle(*step as i32, *zero))
             .collect();
 
         let target_positions: Vec<u16> = leader_angles
