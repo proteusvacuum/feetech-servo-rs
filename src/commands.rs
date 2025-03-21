@@ -1,4 +1,5 @@
-use crate::packet_handler::{Instruction, InstructionPacket};
+use crate::instruction::Instruction;
+use crate::packets::InstructionPacket;
 
 pub enum Command {
     Ping,
