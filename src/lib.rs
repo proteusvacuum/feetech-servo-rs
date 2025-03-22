@@ -11,9 +11,10 @@
 //! ## Usage
 //!
 //! ```no_run
-//! use feetech_servo_rs::driver::Driver;
-//! use feetech_servo_rs::commands::Command;
+//! use feetech_servo_rs::Driver;
+//! use feetech_servo_rs::Command;
 //!
+//! let motor_id = 1u8;
 //! let mut driver = Driver::new("/dev/ttyUSB0");
 //! let current_position: u16 = driver.act(motor_id, Command::ReadCurrentPosition).unwrap();
 //! driver.act(motor_id, Command::WriteTargetPosition(current_position + 5u16)).unwrap();

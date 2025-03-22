@@ -13,7 +13,7 @@ impl Driver {
     ///
     /// # Example
     /// ```no_run
-    /// use feetech_servo_sdk::driver::Driver;
+    /// use feetech_servo_rs::Driver;
     ///
     /// let driver = Driver::new("/dev/ttyUSB0");
     /// ```
@@ -42,10 +42,11 @@ impl Driver {
     ///
     /// # Example
     /// ```no_run
-    /// use feetech_servo_sdk::driver::Driver;
-    /// use feetech_servo_sdk::commands::Command;
+    /// use feetech_servo_rs::Driver;
+    /// use feetech_servo_rs::Command;
+    /// let motor_id = 1u8;
     /// let mut driver = Driver::new("/dev/ttyUSB0");
-    /// let current_position: u16 = leader.act(motor_id, Command::ReadCurrentPosition).unwrap();
+    /// let current_position: u16 = driver.act(motor_id, Command::ReadCurrentPosition).unwrap();
     /// driver.act(motor_id, Command::WriteTargetPosition(current_position + 5u16)).unwrap();
     /// ```
     pub fn act(&mut self, motor_id: u8, command: Command) -> Option<u16> {
