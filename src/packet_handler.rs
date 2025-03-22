@@ -17,7 +17,7 @@ pub enum TxError {
     #[error("tx failed")]
     TxFail,
     #[error("tx encountered an error")]
-    TxError,
+    Error,
     #[error("not available")]
     NotAvailable,
 }
@@ -74,7 +74,7 @@ impl PacketHandler {
 
     pub fn tx_packet(&mut self, packet: &InstructionPacket) -> TxResult {
         if packet.get_total_packet_length() > 250 {
-            return Err(TxError::TxError);
+            return Err(TxError::Error);
         }
         match self.port.write(&packet.as_bytes()) {
             Ok(_) => Ok(TxStatus::Success),
