@@ -30,7 +30,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use std::{io, thread::sleep, time::Duration};
 
-use feetech_servo_sdk::{commands::Command, driver::Driver};
+use feetech_servo_rs::{Command, Driver};
 
 fn main() {
     let mut leader = Driver::new("/dev/ttyACM0");

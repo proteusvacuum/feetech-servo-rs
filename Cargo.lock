@@ -53,7 +53,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "feetech-servo-sdk"
+name = "feetech-servo-rs"
 version = "0.1.0"
 dependencies = [
  "ctrlc",

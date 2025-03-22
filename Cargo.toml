@@ -2,6 +2,12 @@
 name = "feetech-servo-rs"
 version = "0.1.0"
 edition = "2024"
+readme = "README.md"
+repository = "https://github.com/proteusvacuum/feetech-servo-rs"
+keywords = ["feetech", "servo", "robotics", "STS3215", "S0-ARM100"]
+categories = ["embedded", "hardware-support", "robotics"]
+description = "A Rust SDK for controlling Feetech smart serial bus servos"
+
 
 [dependencies]
 serialport = "4.7.0"
