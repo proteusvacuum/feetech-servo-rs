@@ -21,7 +21,7 @@ driver.act(motor_id, Command::WriteTargetPosition(current_position + 5u16)).unwr
 
 ## Examples
 
-- **Teleoperation Demo**: See [`examples/teloperate.rs`](https://github.com/proteusvacuum/feetech-servo-rs/blob/main/examples/teloperate.rs) for a real-time leader-follower example, where the leader controls the follower exactly.
+- **Teleoperation Demo**: See [`examples/teloperate.rs`](./examples/teloperate.rs) for a real-time leader-follower example, where the leader controls the follower exactly.
 
 
 Made with :heart: at the [Recurse Center](https://www.recurse.com)
