@@ -21,6 +21,7 @@ driver.act(motor_id, Command::WriteTargetPosition(current_position + 5u16)).unwr
 
 ## Examples
 
+- **Calibration Demo**: See [`examples/calibrate.rs`](./examples/calibrate.rs) to set the zero positions for motors.
 - **Teleoperation Demo**: See [`examples/teloperate.rs`](./examples/teleoperate.rs) for a real-time leader-follower example, where the leader controls the follower exactly.
 
 
