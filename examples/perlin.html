@@ -1,0 +1,304 @@
+<html>
+    <body>
+        <div id="canvas-container"></div>
+        <div id="controls-container"></div>
+        <style>
+         html, body {
+             margin: 0;
+             padding: 0;
+             display: flex;
+             justify-content: flex-start;
+         }
+
+         canvas {
+             display: block;
+         }
+
+         #canvas-container {
+             position: relative;
+         }
+
+         #controls-container {
+             padding: 20px;
+             width: 400px;
+             display: grid;
+             grid-template-columns: 1fr 1fr;
+             gap: 10px;
+         }
+
+         .slider-container {
+             margin-bottom: 15px;
+         }
+
+         .slider-label {
+             font-family: Arial, sans-serif;
+             font-weight: bold;
+             margin-bottom: 5px;
+             display: block;
+             font-size: 12px;
+         }
+
+         input[type="range"] {
+             width: 140px !important;
+         }
+
+
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.2/p5.min.js"></script>
+        <script>
+         const socket = new WebSocket('ws://10.100.11.67:9001');
+         let params = [];
+         socket.addEventListener('message', (event) => {
+           console.log(JSON.parse(event.data));
+           params = JSON.parse(event.data);
+         });
+
+         socket.addEventListener('close', () => {
+           console.log('WebSocket disconnected');
+         });
+
+         socket.addEventListener('error', (error) => {
+           console.error('WebSocket error:', error);
+         });
+
+         let buffer;
+         let blurBuffer;  // Add blur buffer
+         let bgColor = "#000000";
+
+         // Control variables
+         let amplitude;
+         let freqX, freqY;
+         let noiseAmount, noiseAmount2, noiseScale, timeScale;
+         let period, tStepSize;
+         let lineWeight;
+         let noiseOctaves, noiseFalloff;
+         let startColor, endColor, headColor;
+         let blurAmount, fadeAmount;  // New blur control variables
+
+         // Poisson process variables
+         let eventFrequency;  // events per second
+         let eventDuration;   // milliseconds
+         let eventIntensity = 0;  // Track the current event intensity
+         let lastEventTime = 0;   // Track the last event time
+         let currentIntensity = 0;  // For smoothing
+
+         // Value display elements
+         let amplitudeValue, freqXValue, freqYValue;
+         let noiseAmountValue, noiseScaleValue, timeScaleValue;
+
+         function setup() {
+           let canvas = createCanvas(800, 800);
+           canvas.parent('canvas-container');
+
+           buffer = createGraphics(800, 800);
+           blurBuffer = createGraphics(800, 800);  // Initialize blur buffer
+           blurBuffer.background(bgColor);
+           background(bgColor);
+
+           // Get the controls container
+           let controls = select('#controls-container');
+
+           // Add color input controls
+           createColorControl('Background Color', '#09122C', (v) => {
+             bgColor = v;
+             background(bgColor);
+             blurBuffer.background(bgColor);
+           });
+           createColorControl('Start Color', '#872341', (v) => startColor = color(v));
+           createColorControl('End Color', '#E17564', (v) => endColor = color(v));
+           createColorControl('Head Color', '#BE3144', (v) => headColor = color(v));
+
+           // Create slider containers with improved styling
+           createSliderControl('Amplitude', 100, 400, 300, 10, (v) => amplitude = v);
+           createSliderControl('X Frequency', 1, 9, 2, 0.25, (v) => freqX = v);
+           createSliderControl('Y Frequency', 1, 9, 5, 0.25, (v) => freqY = v);
+           createSliderControl('Period (×π)', 1, 12, 1, 1, (v) => period = v);
+           createSliderControl('Step Size', 0.001, 0.1, 0.006, 0.001, (v) => tStepSize = v);
+           createSliderControl('Line Weight', 0.5, 5, 5, 0.5, (v) => lineWeight = v);
+           createSliderControl('Noise Amount 1', 0, 1, .6, 0.05, (v) => noiseAmount = v);
+           createSliderControl('Noise Amount 2', 0, 1, .15, 0.05, (v) => noiseAmount2 = v);
+           createSliderControl('Noise Scale', 0.5, 2.0, 1.2, 0.05, (v) => noiseScale = v);
+           createSliderControl('Noise Time Scale', 0.001, 0.05, 0.01, 0.0001, (v) => timeScale = v);
+           createSliderControl('Noise Octaves', 1, 8, 5, 1, (v) => noiseOctaves = v);
+           createSliderControl('Octave Falloff', 0, 1, 0.35, 0.05, (v) => noiseFalloff = v);
+           createSliderControl('Event Frequency', 0.1, 5, 1, 0.1, (v) => eventFrequency = v);
+           createSliderControl('Event Duration', 100, 2000, 500, 100, (v) => eventDuration = v);
+           createSliderControl('Blur Amount', 0, 40, 6, 1, (v) => blurAmount = v);
+           createSliderControl('Fade Amount', 0, 0.2, .15, 0.01, (v) => fadeAmount = v);
+         }
+
+         function createSliderControl(label, min, max, defaultValue, step, callback) {
+           let container = createDiv('');
+           container.parent('controls-container');
+           container.class('slider-container');
+
+           let labelElement = createDiv(label);
+           labelElement.class('slider-label');
+           labelElement.parent(container);
+
+           let slider = createSlider(min, max, defaultValue, step);
+           slider.style('width', '180px');
+           slider.parent(container);
+
+           let valueSpan = createSpan(defaultValue);
+           valueSpan.style('margin-left', '10px');
+           valueSpan.parent(container);
+
+           slider.input(() => {
+             let val = slider.value();
+             valueSpan.html(val);
+             callback(val);
+           });
+
+           // Initialize the value
+           callback(defaultValue);
+         }
+
+         function createColorControl(label, defaultValue, callback) {
+           let container = createDiv('');
+           container.parent('controls-container');
+           container.class('slider-container');
+
+           let labelElement = createDiv(label);
+           labelElement.class('slider-label');
+           labelElement.parent(container);
+
+           // Create color picker
+           let colorInput = createInput(defaultValue, 'color');
+           colorInput.parent(container);
+           colorInput.style('margin-left', '10px');
+
+           // Create hex input
+           let hexInput = createInput(defaultValue, 'text');
+           hexInput.parent(container);
+           hexInput.style('margin-left', '10px');
+           hexInput.style('width', '70px');
+
+           // Update both inputs when color picker changes
+           colorInput.input(() => {
+             let val = colorInput.value();
+             hexInput.value(val.toUpperCase());
+             callback(val);
+           });
+
+           // Update both inputs when hex input changes
+           hexInput.input(() => {
+             let val = hexInput.value();
+             // Only update if it's a valid hex color
+             if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+               colorInput.value(val);
+               callback(val);
+             }
+           });
+
+           // Initialize the values
+           callback(defaultValue);
+         }
+
+         function draw() {
+           amplitude = 200 + Math.abs(400/params[0]);
+           tStepSize = (0.001 + Math.abs(0.1/params[1]));
+           noiseFalloff = Math.abs(params[2]/180);
+           freqX = 9 * Math.abs(params[3]/180);
+           freqY = 9 * Math.abs(params[4]/180);
+           period = 12 * params[5]/ 180;
+
+           // Update Poisson events
+           let currentTime = millis();
+
+           // Check for new events based on frequency
+           if (random() < eventFrequency / frameRate()) {
+             lastEventTime = currentTime;
+             eventIntensity = 1.0;  // Reset to full intensity
+           }
+
+           // Calculate event intensity based on time since last event
+           if (eventIntensity > 0) {
+             let timeSinceEvent = currentTime - lastEventTime;
+             eventIntensity = map(timeSinceEvent, 0, eventDuration, 1, 0);
+             eventIntensity = constrain(eventIntensity, 0, 1);
+           }
+
+           // Smooth the intensity changes
+           currentIntensity = lerp(currentIntensity, eventIntensity, 0.3);
+
+           // Clear the buffer with a transparent background
+           buffer.clear();
+           buffer.background("#000000" + "00");
+
+           buffer.translate(width/2, height/2);
+           buffer.strokeWeight(lineWeight);
+
+           let startT = frameCount * 0.05;
+           noiseDetail(noiseOctaves, noiseFalloff);
+
+           for(let t = startT; t < startT + period * PI; t += tStepSize) {
+             let colorAmount = map(t, startT, startT + period * PI, 0, 1);
+             let currentColor = lerpColor(startColor, endColor, colorAmount);
+
+             // Blend head color based on event intensity
+             if (currentIntensity > 0 && t <= startT + 1) {
+               let transition = map(t, startT, startT + 1, 0, 1);
+               let eventColor = lerpColor(endColor, headColor, transition);
+               currentColor = lerpColor(currentColor, eventColor, currentIntensity);
+             } else if (currentIntensity > 0 && t <= startT + 2) {
+               let transition = map(t, startT + 1, startT + 2, 0, 1);
+               let eventColor = lerpColor(headColor, startColor, transition);
+               currentColor = lerpColor(currentColor, eventColor, currentIntensity);
+             }
+
+             buffer.stroke(currentColor);
+
+             // Calculate base coordinates
+             let x = amplitude * sin(freqX * t);
+             let y = amplitude * cos(freqY * t);
+
+             // Calculate noise for both points independently
+             let xNoise1 = lerp(1.0, noise(sin(t * 2), frameCount * timeScale) * noiseScale, noiseAmount);
+             let yNoise1 = lerp(1.0, noise(cos(t * 2), frameCount * timeScale) * noiseScale, noiseAmount);
+             let xNoise2 = lerp(1.0, noise(sin(t * 2), frameCount * timeScale + 1000) * noiseScale, noiseAmount2);
+             let yNoise2 = lerp(1.0, noise(cos(t * 2), frameCount * timeScale + 1000) * noiseScale, noiseAmount2);
+
+             // Apply noise to coordinates
+             let x1 = x * xNoise1;
+             let y1 = y * yNoise1;
+             let x2 = x * xNoise2;
+             let y2 = y * yNoise2;
+
+             // If noise amount 2 is greater than noise amount 1, draw point instead of line
+             if (noiseAmount2 > noiseAmount) {
+               buffer.point(x2, y2);
+             } else {
+               buffer.line(x1, y1, x2, y2);
+             }
+           }
+
+           buffer.resetMatrix();
+
+           // Apply radial blur effect
+           blurBuffer.clear();
+           let steps = 40;  // Number of blur steps
+
+           for(let i = 0; i < steps; i++) {
+             blurBuffer.push();
+             blurBuffer.translate(width/2, height/2);
+             let scale = 1 + (i * blurAmount / 1000);
+             blurBuffer.scale(scale);
+             blurBuffer.translate(-width/2, -height/2);
+             blurBuffer.tint(255, fadeAmount * (1 - i/steps) * 255);
+             blurBuffer.image(buffer, 0, 0);
+             blurBuffer.pop();
+           }
+
+           // Draw the final composition in correct order:
+           // First the blur effect, then the sharp lines on top
+           background(bgColor);
+           image(blurBuffer, 0, 0);
+           image(buffer, 0, 0);
+         }
+
+
+        </script>
+    </body>
+
+</html>
