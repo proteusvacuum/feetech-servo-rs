@@ -113,7 +113,7 @@ fn main() {
         );
         print!("\x1b[3A");
         io::stdout().flush().unwrap();
-        sleep(Duration::from_millis(1));
+        sleep(Duration::from_micros(1));
     }
 
     // Clean up by turning off all the motors

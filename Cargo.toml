@@ -15,3 +15,4 @@ thiserror = "2.0.12"
 
 [dev-dependencies]
 ctrlc = "3.4.5"                 # For teleoperate example
+tungstenite = "0.26.2"          # For websocket example
