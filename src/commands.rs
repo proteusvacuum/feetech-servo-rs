@@ -6,7 +6,7 @@ pub enum Command {
     ReadId,
     WriteTorqueSwitch(bool),
     ReadCurrentPosition,
-
+    ReadTemperature,
     WriteTargetPosition(u16),
 }
 
@@ -20,6 +20,9 @@ impl Command {
             }
             Command::ReadCurrentPosition => {
                 InstructionPacket::new(motor_id, Instruction::Read, &[0x38, 2])
+            }
+            Command::ReadTemperature => {
+                InstructionPacket::new(motor_id, Instruction::Read, &[0x3F, 1])
             }
             Command::WriteTargetPosition(target_position) => {
                 let low: u8 = (*target_position >> 8) as u8;
@@ -46,6 +49,10 @@ mod tests {
                 Command::WriteTargetPosition(1025),
                 InstructionPacket::new(motor_id, Instruction::Write, &[0x2A, 0x1, 0x4]),
             ),
+            (
+                Command::ReadTemperature,
+                InstructionPacket::new(motor_id, Instruction::Read, &[0x3F, 1]),
+            )
         ];
         for (command, instruction_packet) in cases {
             assert_eq!(command.to_instruction_packet(motor_id), instruction_packet);
