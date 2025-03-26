@@ -196,12 +196,12 @@
          }
 
          function draw() {
-           amplitude = 200 + Math.abs(400/params[0]);
-           tStepSize = (0.001 + Math.abs(0.1/params[1]));
+           amplitude = 200 + Math.abs(params[0] * 200 / 180);
+           tStepSize = (0.01 + Math.abs((params[1]*0.5/180)));
            noiseFalloff = Math.abs(params[2]/180);
            freqX = 9 * Math.abs(params[3]/180);
            freqY = 9 * Math.abs(params[4]/180);
-           period = 12 * params[5]/ 180;
+           period = (12 * params[5]/ 180) + 0.25 ;
 
            // Update Poisson events
            let currentTime = millis();
