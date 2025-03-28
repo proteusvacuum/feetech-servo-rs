@@ -17,6 +17,13 @@ fn main() {
     let _ = io::stdin().read_line(&mut num_motors);
     let num_motors: u8 = num_motors.trim().parse().expect("Please type a number!");
     for motor_id in 1..=num_motors {
-        println!("motor {motor_id} temperature:{}", driver.act(motor_id, Command::ReadTemperature).unwrap());
+        println!(
+            "motor {motor_id} temperature:{}",
+            driver.act(motor_id, Command::ReadTemperature).unwrap()
+        );
+        println!(
+            "motor {motor_id} acceleration: {}",
+            driver.act(motor_id, Command::ReadAcceleration).unwrap()
+        )
     }
 }

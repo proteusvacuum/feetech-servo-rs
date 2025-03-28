@@ -8,6 +8,8 @@ pub enum Command {
     ReadCurrentPosition,
     ReadTemperature,
     WriteTargetPosition(u16),
+    ReadAcceleration,
+    WriteAcceleration(u8),
 }
 
 impl Command {
@@ -28,6 +30,12 @@ impl Command {
                 let low: u8 = (*target_position >> 8) as u8;
                 let high: u8 = (*target_position & 0x00FF) as u8;
                 InstructionPacket::new(motor_id, Instruction::Write, &[0x2A, high, low])
+            }
+            Command::ReadAcceleration => {
+                InstructionPacket::new(motor_id, Instruction::Read, &[0x29, 1])
+            }
+            Command::WriteAcceleration(acceleration) => {
+                InstructionPacket::new(motor_id, Instruction::Write, &[0x29, *acceleration])
             }
         }
     }
@@ -52,7 +60,7 @@ mod tests {
             (
                 Command::ReadTemperature,
                 InstructionPacket::new(motor_id, Instruction::Read, &[0x3F, 1]),
-            )
+            ),
         ];
         for (command, instruction_packet) in cases {
             assert_eq!(command.to_instruction_packet(motor_id), instruction_packet);
