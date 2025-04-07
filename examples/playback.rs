@@ -45,43 +45,169 @@ fn main() {
     .expect("Error setting Ctrl-C handler");
 
     // let song = vec![60, 60, 67, 67, 69, 69, 67]; // twinkle
-    let song = vec![
-        (60, 500),
-        (62, 500),
-        (64, 500),
-        (65, 500),
-        (67, 500),
-        (69, 500),
-        (71, 500),
-        (72, 500),
+
+    let quarter = 500;
+    let dotted_quarter = 750;
+    let eighth = 250;
+    let half = 1000;
+    let dotted_half = 1500;
+    let aboussikum = vec![
+        ("Eb", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("Eb", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("D", quarter),
+        ("D", quarter),
+        ("G", quarter),
+        ("F", quarter),
+        ("Eb", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("Rest", quarter), // Rest
+        ("Eb", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("Eb", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("Eb", quarter),
+        ("Eb", quarter),
+        ("D", quarter),
+        ("Eb", quarter),
+        ("C", dotted_half),
+        ("Rest", quarter),
     ];
 
-    // let playback = vec![
-    //     ("60a", 1000),
-    //     ("60", 1000),
-    //     ("0", 500),
-    //     ("62a", 1000),
-    //     ("62", 1000),
-    //     ("0", 500),
-    //     ("64a", 1000),
-    //     ("64", 1000),
-    //     ("0", 500),
-    //     // (65, 1000),
-    //     // (0, 500),
-    //     // (67, 1000),
-    //     // (0, 500),
-    //     // (69, 1000),
-    //     // (0, 500),
-    //     // (71, 1000),
-    //     // (0, 500),
-    //     // (72, 1000),
-    //     // (0, 500),
-    // ];
+    let ode = vec![
+        ("E", quarter),
+        ("E", quarter),
+        ("F", quarter),
+        ("G", quarter),
+        ("G", quarter),
+        ("F", quarter),
+        ("E", quarter),
+        ("D", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("D", quarter),
+        ("E", quarter),
+        ("E", dotted_quarter),
+        ("D", eighth),
+        ("D", half),
+        ("E", quarter),
+        ("E", quarter),
+        ("F", quarter),
+        ("G", quarter),
+        ("G", quarter),
+        ("F", quarter),
+        ("E", quarter),
+        ("D", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("D", quarter),
+        ("E", quarter),
+        ("D", dotted_quarter),
+        ("C", eighth),
+        ("C", half),
+        ("D", quarter),
+        ("D", quarter),
+        ("E", quarter),
+        ("C", quarter),
+        ("D", quarter),
+        ("E", eighth),
+        ("F", eighth),
+        ("E", quarter),
+        ("C", quarter),
+        ("D", quarter),
+        ("E", eighth),
+        ("F", eighth),
+        ("E", quarter),
+        ("D", quarter),
+        ("C", quarter),
+        ("D", quarter),
+        ("G", half),
+        ("E", quarter),
+        ("E", quarter),
+        ("F", quarter),
+        ("G", quarter),
+        ("G", quarter),
+        ("F", quarter),
+        ("E", quarter),
+        ("D", quarter),
+        ("C", quarter),
+        ("C", quarter),
+        ("D", quarter),
+        ("E", quarter),
+        ("D", dotted_quarter),
+        ("C", eighth),
+        ("C", half + half),
+    ];
+
+    let heart = vec![
+        // Heart and soul
+        ("F", dotted_quarter),
+        ("F", dotted_quarter),
+        ("F", dotted_half + quarter),
+        ("F", eighth),
+        ("E", quarter),
+        ("D", eighth),
+        ("E", quarter),
+        ("F", eighth),
+        ("G", quarter),
+        ("A", dotted_quarter),
+        ("A", dotted_quarter),
+        ("A", dotted_half),
+        ("A", eighth),
+        ("G", quarter),
+        ("F", eighth),
+        ("G", quarter),
+        ("A", eighth),
+        ("Bb", dotted_quarter),
+        ("C2", dotted_half),
+        ("F", dotted_half),
+        ("C2", eighth),
+        ("Bb", dotted_quarter),
+        ("A", eighth),
+        ("G", quarter),
+        ("A", quarter),
+        ("F", dotted_half),
+        ("E", eighth),
+        ("D", dotted_half),
+        ("C", eighth),
+        ("D", dotted_half),
+        ("C", eighth),
+        ("D", dotted_half),
+        ("E", dotted_half),
+    ];
+
+    let scale = vec![
+        ("C", half),
+        ("D", half),
+        ("E", half),
+        ("F", half),
+        ("G", half),
+        ("A", half),
+        ("Bb", half),
+        ("B", half),
+        ("C2", half),
+    ];
+    let bb = vec![("Bb", half)];
+    let cc = vec![("C", half)];
+
+    let song = heart;
 
     while running.load(std::sync::atomic::Ordering::SeqCst) {
-        let intermediate_duration = 400;
-        for (note_value, duration) in &song {
-            let intermediate = get_intermediate_position(*note_value);
+        // let intermediate_duration = 400;
+        for (note, duration) in &song {
+            let intermediate_duration = *duration / 3;
+            let note_value = get_number_from_note(*note);
+            let intermediate = get_intermediate_position(note_value);
             let intermediate_positions = read_position_file(&intermediate);
             for motor_id in 1u8..=6u8 {
                 driver.act(
@@ -99,7 +225,7 @@ fn main() {
                     Command::WriteTargetPosition(positions[(motor_id - 1) as usize] as u16),
                 );
             }
-            sleep(Duration::from_millis(*duration));
+            sleep(Duration::from_millis(*duration / 3));
 
             for motor_id in 1u8..=6u8 {
                 driver.act(
@@ -122,4 +248,21 @@ fn main() {
 
 fn get_intermediate_position(position: u16) -> String {
     format!("{position}a")
+}
+
+fn get_number_from_note(note: &str) -> u16 {
+    match note {
+        "C" => 60,
+        "D" => 62,
+        "Eb" => 63,
+        "E" => 64,
+        "F" => 65,
+        "G" => 67,
+        "A" => 69,
+        "Bb" => 70,
+        "B" => 71,
+        "C2" => 72,
+        "Rest" => 200,
+        _ => 60,
+    }
 }
