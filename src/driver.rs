@@ -19,12 +19,32 @@ impl Driver {
     /// ```
     ///
     /// # Notes
-    /// - This driver currently assumes the serial baud rate is fixed at **1 Mbps** (1,000,000 baud).
+    /// - If you need to specify a different baud rate, use [`Driver::with_baud_rate`] instead.
     ///
     /// # Panics
     /// This function will panic if invalid port names are provided
     pub fn new(port_name: &str) -> Self {
-        let baud_rate = 1_000_000;
+        Self::with_baud_rate(port_name, 1_000_000)
+    }
+
+    /// Creates a new `Driver` instance for a chain of servos connected to a single serial port,
+    /// with a user-specified baud rate.
+    ///
+    /// # Arguments
+    ///
+    /// * `port_name` - The name of the serial port (e.g., `"/dev/ttyUSB0"` or `"COM3"`).
+    /// * `baud_rate` - The baud rate to use (e.g., `1_000_000` for 1 Mbps).
+    ///
+    /// # Example
+    /// ```no_run
+    /// use feetech_servo_rs::Driver;
+    ///
+    /// let driver = Driver::with_baud_rate("/dev/ttyUSB0", 57600);
+    /// ```
+    ///
+    /// # Panics
+    /// This function will panic if an invalid port name is provided.
+    pub fn with_baud_rate(port_name: &str, baud_rate: u32) -> Self {
         Self {
             packet_handler: PacketHandler::new(port_name, baud_rate),
         }
