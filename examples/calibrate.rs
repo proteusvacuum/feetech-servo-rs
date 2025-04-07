@@ -5,7 +5,7 @@ use std::{
     process::exit,
 };
 
-use feetech_servo_rs::{Command, Driver};
+use feetech_servo_rs::{Driver, ReadCommand};
 
 fn main() {
     println!("Enter the port (default: /dev/ttyACM0):");
@@ -41,7 +41,7 @@ fn main() {
 
     let mut positions: Vec<u16> = Vec::with_capacity(num_motors as usize);
     for motor_id in 1..=num_motors {
-        positions.push(driver.act(motor_id, Command::ReadCurrentPosition).unwrap());
+        positions.push(driver.read(motor_id, ReadCommand::CurrentPosition).unwrap());
     }
     let path = format!("./calibration/{}", name);
     if let Some(parent) = Path::new(&path).parent() {

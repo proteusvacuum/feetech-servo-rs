@@ -31,7 +31,11 @@ use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use std::{io, thread::sleep, time::Duration};
 
-use feetech_servo_rs::{Command, Driver};
+use feetech_servo_rs::{
+    Driver,
+    ReadCommand::CurrentPosition,
+    WriteCommand::{TargetPosition, TorqueSwitch},
+};
 
 fn read_calibration_file(name: &str) -> Vec<i32> {
     let file = File::open(format!("./calibration/{}", name)).expect("File not found");
@@ -81,11 +85,10 @@ fn main() {
     while running.load(std::sync::atomic::Ordering::SeqCst) {
         for motor_id in 1u8..=6u8 {
             leader_positions[(motor_id - 1) as usize] =
-                leader.act(motor_id, Command::ReadCurrentPosition).unwrap();
+                leader.read(motor_id, CurrentPosition).unwrap();
 
-            follower_positions[(motor_id - 1) as usize] = follower
-                .act(motor_id, Command::ReadCurrentPosition)
-                .unwrap();
+            follower_positions[(motor_id - 1) as usize] =
+                follower.read(motor_id, CurrentPosition).unwrap();
         }
         let leader_angles: Vec<i32> = leader_positions
             .iter()
@@ -101,9 +104,9 @@ fn main() {
 
         for motor_id in 1u8..=6u8 {
             follower
-                .act(
+                .write(
                     motor_id,
-                    Command::WriteTargetPosition(target_positions[(motor_id - 1) as usize]),
+                    TargetPosition(target_positions[(motor_id - 1) as usize]),
                 )
                 .unwrap();
         }
@@ -118,12 +121,8 @@ fn main() {
 
     // Clean up by turning off all the motors
     for motor_id in 1u8..=6u8 {
-        leader
-            .act(motor_id, Command::WriteTorqueSwitch(false))
-            .unwrap();
-        follower
-            .act(motor_id, Command::WriteTorqueSwitch(false))
-            .unwrap();
+        leader.write(motor_id, TorqueSwitch(false)).unwrap();
+        follower.write(motor_id, TorqueSwitch(false)).unwrap();
     }
 }
 

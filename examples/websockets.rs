@@ -4,7 +4,7 @@ use std::io::BufRead;
 use std::sync::{mpsc, Arc, Mutex};
 use std::{io, thread::sleep, time::Duration};
 
-use feetech_servo_rs::{Command, Driver};
+use feetech_servo_rs::{Driver, ReadCommand::CurrentPosition};
 
 use std::net::TcpListener;
 use std::thread::spawn;
@@ -37,14 +37,14 @@ fn main() {
             "" => "/dev/ttyACM1",
             other => other,
         };
-        let mut leader = Driver::new(&leader_port);
+        let mut leader = Driver::new(leader_port);
         let mut leader_positions: Vec<u16> = [0; 6].to_vec();
 
         let leader_zero = read_calibration_file("./leader");
         loop {
             for motor_id in 1u8..=6u8 {
                 leader_positions[(motor_id - 1) as usize] =
-                    leader.act(motor_id, Command::ReadCurrentPosition).unwrap();
+                    leader.read(motor_id, CurrentPosition).unwrap();
             }
             let leader_angles: Vec<i32> = leader_positions
                 .iter()

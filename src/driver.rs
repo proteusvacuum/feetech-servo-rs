@@ -66,11 +66,12 @@ impl Driver {
     /// # Example
     /// ```no_run
     /// use feetech_servo_rs::Driver;
-    /// use feetech_servo_rs::Command;
+    /// use feetech_servo_rs::{ReadCommand::CurrentPosition, WriteCommand::TargetPosition};
+    ///
     /// let motor_id = 1u8;
     /// let mut driver = Driver::new("/dev/ttyUSB0");
-    /// let current_position: u16 = driver.act(motor_id, Command::ReadCurrentPosition).unwrap();
-    /// driver.act(motor_id, Command::WriteTargetPosition(current_position + 5u16)).unwrap();
+    /// let current_position: u16 = driver.read(motor_id, CurrentPosition).unwrap();
+    /// driver.write(motor_id, TargetPosition(current_position + 5u16)).unwrap();
     /// ```
     fn act<T: IntoInstructionPacket>(&mut self, motor_id: u8, command: T) -> Option<u16> {
         let packet = command.to_instruction_packet(motor_id);

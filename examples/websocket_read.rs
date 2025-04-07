@@ -4,7 +4,7 @@ use std::io::BufRead;
 use std::io;
 use std::sync::{mpsc, Arc, Mutex};
 
-use feetech_servo_rs::{Command, Driver};
+use feetech_servo_rs::{Driver, WriteCommand::TargetPosition};
 
 use std::{net::TcpListener, thread::spawn};
 
@@ -36,7 +36,7 @@ fn main() {
             "" => "/dev/ttyACM0",
             other => other,
         };
-        let mut follower = Driver::new(&follower_port);
+        let mut follower = Driver::new(follower_port);
 
         let follower_zero = read_calibration_file("./follower");
         loop {
@@ -52,9 +52,9 @@ fn main() {
 
             for motor_id in 1u8..=6u8 {
                 follower
-                    .act(
+                    .write(
                         motor_id,
-                        Command::WriteTargetPosition(target_positions[(motor_id - 1) as usize]),
+                        TargetPosition(target_positions[(motor_id - 1) as usize]),
                     )
                     .unwrap();
             }

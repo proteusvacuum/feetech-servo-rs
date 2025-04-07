@@ -1,6 +1,6 @@
 use std::io::{self};
 
-use feetech_servo_rs::{Command, Driver};
+use feetech_servo_rs::{Driver, ReadCommand, WriteCommand};
 
 fn main() {
     println!("Enter the port (default: /dev/tty.usbmodem58FD0166701");
@@ -12,7 +12,7 @@ fn main() {
     };
     let mut driver = Driver::new(port);
 
-    let mo1_pos = driver.act(1, Command::ReadCurrentPosition).unwrap();
+    let mo1_pos = driver.read(1, ReadCommand::Acceleration).unwrap();
     println!("Motor 1 is at {}", mo1_pos);
 
     println!("Enter how fast do you want to go? ");
@@ -21,7 +21,7 @@ fn main() {
     let new_accel: u8 = new_accel.trim().parse().expect("Please type a number!");
 
     driver
-        .act(1, Command::WriteAcceleration(new_accel))
+        .write(1, WriteCommand::Acceleration(new_accel))
         .unwrap();
 
     println!("Enter where do you want to go?");
@@ -30,6 +30,6 @@ fn main() {
     let new_pos: u16 = new_pos.trim().parse().expect("Please type a number!");
 
     driver
-        .act(1, Command::WriteTargetPosition(new_pos))
+        .write(1, WriteCommand::TargetPosition(new_pos))
         .unwrap();
 }

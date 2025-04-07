@@ -1,6 +1,9 @@
 use std::io::{self};
 
-use feetech_servo_rs::{Command, Driver};
+use feetech_servo_rs::{
+    Driver,
+    ReadCommand::{Acceleration, Temperature},
+};
 
 fn main() {
     println!("Enter the port (default: /dev/ttyACM0):");
@@ -19,11 +22,11 @@ fn main() {
     for motor_id in 1..=num_motors {
         println!(
             "motor {motor_id} temperature:{}",
-            driver.act(motor_id, Command::ReadTemperature).unwrap()
+            driver.read(motor_id, Temperature).unwrap()
         );
         println!(
             "motor {motor_id} acceleration: {}",
-            driver.act(motor_id, Command::ReadAcceleration).unwrap()
+            driver.read(motor_id, Acceleration).unwrap()
         )
     }
 }
