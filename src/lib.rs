@@ -26,6 +26,7 @@ pub use commands::Command;
 pub use driver::Driver;
 
 mod instruction;
+mod memory_location;
 mod packet_handler;
 mod packets;
 mod serial;

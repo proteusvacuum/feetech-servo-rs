@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use crate::instruction::Instruction;
+use crate::memory_location::{MemoryLocation, MemoryValue};
 use crate::utils;
 
 #[derive(Debug)]
@@ -74,6 +75,37 @@ impl InstructionPacket {
             instruction,
             checksum: utils::compute_checksum(id, length, instruction, parameters),
             parameters: parameters.to_vec(),
+        }
+    }
+
+    pub fn read_from_memory_location(id: u8, memory_location: MemoryLocation) -> Self {
+        Self::new(
+            id,
+            Instruction::Read,
+            &[memory_location.addr, memory_location.size],
+        )
+    }
+
+    pub fn write_to_memory_location(
+        id: u8,
+        memory_location: MemoryLocation,
+        value: MemoryValue,
+    ) -> Self {
+        match value {
+            MemoryValue::U16(val) => {
+                assert_eq!(memory_location.size, 2);
+                let low: u8 = (val >> 8) as u8;
+                let high: u8 = (val & 0x00FF) as u8;
+                Self::new(id, Instruction::Write, &[memory_location.addr, high, low])
+            }
+            MemoryValue::U8(val) => {
+                assert_eq!(memory_location.size, 1);
+                Self::new(id, Instruction::Write, &[memory_location.addr, val])
+            }
+            MemoryValue::Bool(val) => {
+                assert_eq!(memory_location.size, 1);
+                Self::new(id, Instruction::Write, &[memory_location.addr, val as u8])
+            }
         }
     }
 

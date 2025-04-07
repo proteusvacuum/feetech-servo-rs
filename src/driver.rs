@@ -1,4 +1,7 @@
-use crate::{commands::Command, packet_handler::PacketHandler};
+use crate::{
+    commands::{IntoInstructionPacket, ReadCommand, WriteCommand},
+    packet_handler::PacketHandler,
+};
 
 pub struct Driver {
     packet_handler: PacketHandler,
@@ -69,7 +72,7 @@ impl Driver {
     /// let current_position: u16 = driver.act(motor_id, Command::ReadCurrentPosition).unwrap();
     /// driver.act(motor_id, Command::WriteTargetPosition(current_position + 5u16)).unwrap();
     /// ```
-    pub fn act(&mut self, motor_id: u8, command: Command) -> Option<u16> {
+    fn act<T: IntoInstructionPacket>(&mut self, motor_id: u8, command: T) -> Option<u16> {
         let packet = command.to_instruction_packet(motor_id);
         let status_packet = match self.packet_handler.tx_rx_packet(packet).ok()? {
             crate::packet_handler::RxStatus::Success(Some(packet)) => packet,
@@ -77,5 +80,13 @@ impl Driver {
             _ => return None,
         };
         Some(status_packet.extract_data())
+    }
+
+    pub fn read(&mut self, motor_id: u8, command: ReadCommand) -> Option<u16> {
+        self.act::<ReadCommand>(motor_id, command)
+    }
+
+    pub fn write(&mut self, motor_id: u8, command: WriteCommand) -> Option<u16> {
+        self.act::<WriteCommand>(motor_id, command)
     }
 }
