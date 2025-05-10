@@ -239,7 +239,8 @@
       motorDiv.className = 'motor';
 
       const label = document.createElement('label');
-      label.textContent = `M0T0R_${i + 1} //ANGL3:`;
+      const motorNames = ["BASE", "SHOULDER", "ELBOW", "WRIST_ROLL", "WRIST_PITCH", "GRIPPER"];
+      label.textContent = `${motorNames[i]} //ANGL3:`;
 
       const valueSpan = document.createElement('span');
       valueSpan.className = 'value';
