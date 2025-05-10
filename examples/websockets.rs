@@ -26,7 +26,7 @@ fn main() {
     let mut leader_port = String::new();
     let _ = io::stdin().read_line(&mut leader_port);
 
-    let server = TcpListener::bind("10.100.11.67:9001").unwrap();
+    let server = TcpListener::bind("0.0.0.0:9001").unwrap();
 
     let (tx, rx) = mpsc::channel::<Vec<i32>>();
     let rx = Arc::new(Mutex::new(rx));

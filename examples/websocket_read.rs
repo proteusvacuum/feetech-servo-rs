@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::BufRead;
 
-use std::io;
 use std::sync::{mpsc, Arc, Mutex};
+use std::{env, io};
 
 use feetech_servo_rs::{Command, Driver};
 
@@ -22,9 +22,36 @@ fn read_calibration_file(name: &str) -> Vec<i32> {
 }
 
 fn main() {
-    println!("Enter the follower port (default: /dev/ttyACM0):");
-    let mut follower_port = String::new();
-    let _ = io::stdin().read_line(&mut follower_port);
+    // Parse args
+    let args: Vec<String> = env::args().collect();
+    let mut follower_port = None;
+
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--port" => {
+                if i + 1 < args.len() {
+                    follower_port = Some(args[i + 1].clone());
+                    i += 1;
+                } else {
+                    eprintln!("Error: --port requires a value");
+                    std::process::exit(1);
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+
+    let bind_addr = "0.0.0.0:9002".to_string();
+    println!("Listening on: {}", bind_addr);
+
+    let port = follower_port.unwrap_or_else(|| {
+        println!("Enter the follower port (default: /dev/ttyACM0):");
+        let mut port_input = String::new();
+        let _ = io::stdin().read_line(&mut port_input);
+        port_input
+    });
 
     let (tx, rx) = mpsc::channel::<Vec<i32>>();
     let tx = Arc::new(Mutex::new(tx));
@@ -32,7 +59,7 @@ fn main() {
 
     let rx_client = Arc::clone(&rx);
     spawn(move || {
-        let follower_port = match follower_port.trim() {
+        let follower_port = match port.trim() {
             "" => "/dev/ttyACM0",
             other => other,
         };
@@ -61,7 +88,7 @@ fn main() {
         }
     });
 
-    let server = TcpListener::bind("10.100.11.67:9002").unwrap();
+    let server = TcpListener::bind(bind_addr).unwrap();
     for stream in server.incoming() {
         let tx_driver = Arc::clone(&tx);
         spawn(move || {
