@@ -3,87 +3,234 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Motor Angles Control</title>
+  <title>R0B0T C0NTR0L SYST3M</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f7f9fc;
-      margin: 0;
-      padding: 40px;
-      color: #333;
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+    
+    :root {
+      --neon-cyan: #0ff;
+      --neon-magenta: #f0f;
+      --neon-yellow: #ff0;
+      --dark-bg: #0a0b15;
+      --panel-bg: #141625;
+      --shadow-glow: 0 0 10px var(--neon-cyan), 0 0 20px rgba(0, 255, 255, 0.2);
     }
-
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: var(--dark-bg);
+      color: rgba(255, 255, 255, 0.85);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(0, 255, 255, 0.1), transparent 40%),
+        linear-gradient(rgba(5, 15, 30, 0.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(5, 15, 30, 0.5) 1px, transparent 1px);
+      background-size: 100% 100%, 20px 20px, 20px 20px;
+      overflow-x: hidden;
+    }
+    
     h1 {
       text-align: center;
-      margin-bottom: 40px;
-      color: #2c3e50;
+      margin: 30px 0 40px;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-weight: 700;
+      font-size: 2.5rem;
+      text-shadow: 0 0 10px var(--neon-cyan), 0 0 15px rgba(0, 255, 255, 0.5);
+      position: relative;
     }
-
+    
+    h1::before, h1::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 60px;
+      height: 2px;
+      background: var(--neon-cyan);
+      box-shadow: var(--shadow-glow);
+    }
+    
+    h1::before {
+      left: calc(50% - 180px);
+    }
+    
+    h1::after {
+      right: calc(50% - 180px);
+    }
+    
     #motors {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 30px;
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
     }
-
+    
     .motor {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      transition: transform 0.2s;
+      background: var(--panel-bg);
+      border-radius: 6px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      padding: 25px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
     }
-
+    
+    .motor::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    }
+    
     .motor:hover {
-      transform: scale(1.02);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 255, 255, 0.2);
     }
-
+    
     .motor label {
       display: block;
-      margin-bottom: 10px;
-      font-weight: 600;
+      margin-bottom: 18px;
+      font-weight: 500;
       font-size: 1.1em;
+      letter-spacing: 1px;
+      color: white;
     }
-
+    
+    .motor::after {
+      content: "SYS//";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 0.7em;
+      color: var(--neon-cyan);
+      opacity: 0.7;
+    }
+    
     .value {
-      color: #2980b9;
+      color: var(--neon-cyan);
       margin-left: 10px;
-      font-weight: bold;
+      font-weight: 700;
       font-size: 1.2em;
+      text-shadow: 0 0 5px var(--neon-cyan);
     }
-
+    
     input[type="range"] {
+      -webkit-appearance: none;
       width: 100%;
-      margin-top: 10px;
-      accent-color: #2980b9;
+      height: 6px;
+      margin-top: 15px;
+      background: rgba(0, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
     }
-
-    #status {
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: white;
+      cursor: pointer;
+      border-radius: 50%;
+      box-shadow: 0 0 5px var(--neon-cyan), 0 0 10px rgba(0, 255, 255, 0.5);
+      border: 2px solid var(--neon-cyan);
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: white;
+      cursor: pointer;
+      border-radius: 50%;
+      box-shadow: 0 0 5px var(--neon-cyan), 0 0 10px rgba(0, 255, 255, 0.5);
+      border: 2px solid var(--neon-cyan);
+    }
+    
+    input[type="range"]:focus {
+      outline: none;
+    }
+    
+    #status_remote, #status_local {
       text-align: center;
-      margin-top: 30px;
+      margin: 20px auto;
       font-size: 0.9em;
-      color: #666;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 4px;
+      position: relative;
+      font-weight: bold;
+      display: block;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    #status.connected {
-      color: green;
+    #status_remote::before, #status_local::before {
+      content: "■";
+      margin-right: 8px;
     }
 
-    #status.disconnected {
-      color: red;
+    .connected {
+      color: #00ff00;
+      text-shadow: 0 0 5px #00ff00;
+      background: rgba(0, 255, 0, 0.1);
+      border: 1px solid rgba(0, 255, 0, 0.3) !important;
+    }
+
+    .connected::before {
+      color: #00ff00;
+      text-shadow: 0 0 8px #00ff00;
+    }
+
+    .disconnected {
+      color: #ff3333;
+      text-shadow: 0 0 5px #ff3333;
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid rgba(255, 0, 0, 0.3) !important;
+    }
+    
+    @keyframes glitch {
+      0% { text-shadow: 0.05em 0 0 var(--neon-magenta), -0.05em -0.025em 0 var(--neon-cyan); }
+      14% { text-shadow: 0.05em 0 0 var(--neon-magenta), -0.05em -0.025em 0 var(--neon-cyan); }
+      15% { text-shadow: -0.05em -0.025em 0 var(--neon-magenta), 0.025em 0.025em 0 var(--neon-cyan); }
+      49% { text-shadow: -0.05em -0.025em 0 var(--neon-magenta), 0.025em 0.025em 0 var(--neon-cyan); }
+      50% { text-shadow: 0.025em 0.05em 0 var(--neon-magenta), 0.05em 0 0 var(--neon-cyan); }
+      99% { text-shadow: 0.025em 0.05em 0 var(--neon-magenta), 0.05em 0 0 var(--neon-cyan); }
+      100% { text-shadow: -0.025em 0 0 var(--neon-magenta), -0.025em -0.025em 0 var(--neon-cyan); }
+    }
+    
+    h1 span {
+      animation: glitch 3s infinite;
+      position: relative;
+      display: inline-block;
     }
   </style>
 </head>
 <body>
-  <h1>Motor Angles Control</h1>
+  <h1><span>R0B0T</span> C0NTR0L</h1>
   <div id="motors"></div>
-  <div id="status" class="disconnected">Connecting to WebSocket...</div>
+  <div id="status_remote" class="disconnected">REMOTE ROBOT CONNECTION: CONNECTING...</div>
+  <div id="status_local" class="disconnected">LOCAL ROBOT CONNECTION: CONNECTING...</div>
 
   <script>
     const motorCount = 6;
     const motorsDiv = document.getElementById('motors');
-    const statusDiv = document.getElementById('status');
+    const statusRemoteDiv = document.getElementById('status_remote');
+    const statusLocalDiv = document.getElementById('status_local');
 
     const sliders = [];
 
@@ -92,7 +239,7 @@
       motorDiv.className = 'motor';
 
       const label = document.createElement('label');
-      label.textContent = `Motor ${i + 1} Angle:`;
+      label.textContent = `M0T0R_${i + 1} //ANGL3:`;
 
       const valueSpan = document.createElement('span');
       valueSpan.className = 'value';
@@ -121,21 +268,39 @@
     const socket_read = new WebSocket('ws://localhost:9002');
 
     socket_read.addEventListener('open', () => {
-      statusDiv.textContent = 'Connected';
-      statusDiv.classList.remove('disconnected');
-      statusDiv.classList.add('connected');
+      statusLocalDiv.textContent = 'LOCAL ROBOT CONNECTION: CONNECTED';
+      statusLocalDiv.classList.remove('disconnected');
+      statusLocalDiv.classList.add('connected');
     });
 
     socket_read.addEventListener('close', () => {
-      statusDiv.textContent = 'Disconnected';
-      statusDiv.classList.remove('connected');
-      statusDiv.classList.add('disconnected');
+      statusLocalDiv.textContent = 'LOCAL ROBOT CONNECTION: DISCONNECTED';
+      statusLocalDiv.classList.remove('connected');
+      statusLocalDiv.classList.add('disconnected');
     });
 
     socket_read.addEventListener('error', () => {
-      statusDiv.textContent = 'WebSocket error';
-      statusDiv.classList.remove('connected');
-      statusDiv.classList.add('disconnected');
+      statusLocalDiv.textContent = 'LOCAL ROBOT CONNECTION: ERROR';
+      statusLocalDiv.classList.remove('connected');
+      statusLocalDiv.classList.add('disconnected');
+    });
+
+    socket.addEventListener('open', () => {
+      statusRemoteDiv.textContent = 'REMOTE ROBOT CONNECTION: CONNECTED';
+      statusRemoteDiv.classList.remove('disconnected');
+      statusRemoteDiv.classList.add('connected');
+    });
+
+    socket.addEventListener('close', () => {
+      statusRemoteDiv.textContent = 'REMOTE ROBOT CONNECTION: DISCONNECTED';
+      statusRemoteDiv.classList.remove('connected');
+      statusRemoteDiv.classList.add('disconnected');
+    });
+
+    socket.addEventListener('error', () => {
+      statusRemoteDiv.textContent = 'REMOTE ROBOT CONNECTION: ERROR';
+      statusRemoteDiv.classList.remove('connected');
+      statusRemoteDiv.classList.add('disconnected');
     });
 
     function sendAngles() {
